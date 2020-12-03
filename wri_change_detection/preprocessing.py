@@ -75,9 +75,6 @@ def LC_OneChange(image):
     out_image = image.select([band_names.get(0)]).neq(image.select([band_names.get(1)]))
     out_image = out_image.rename([image.get('OriginalBand')])
     out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
-    
-    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_NoChange(image):
@@ -97,9 +94,6 @@ def LC_NoChange(image):
     out_image = image.select([band_names.get(0)]).eq(image.select([band_names.get(1)]))
     out_image = out_image.rename([image.get('OriginalBand')])
     out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
-    
-    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_Reverse(image):
@@ -125,9 +119,6 @@ def LC_Reverse(image):
     out_image = returnback.bitwise_and(changed)
     out_image = out_image.rename([image.get('OriginalBand')])
     out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
-    
-    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_ChangeToAnother(image):
@@ -155,9 +146,6 @@ def LC_ChangeToAnother(image):
     out_image = changed.bitwise_and(changed_again.bitwise_and(not_reversed))
     out_image = out_image.rename([image.get('OriginalBand')])
     out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
-    
-    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_ConsistentChangeOneYear(image):
@@ -184,8 +172,6 @@ def LC_ConsistentChangeOneYear(image):
     out_image = changed.bitwise_and(stayed)
     out_image = out_image.rename([image.get('OriginalBand')])
     out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
-    
-    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
     return out_image
 
 def LC_ConsistentChangeTwoYears(image):
@@ -214,9 +200,6 @@ def LC_ConsistentChangeTwoYears(image):
     out_image = changed.bitwise_and(stayed.bitwise_and(stayed_again))
     out_image = out_image.rename([image.get('OriginalBand')])
     out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
-    
-    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_YearAfter(image):
@@ -234,9 +217,6 @@ def LC_YearAfter(image):
     next_year = image.select([band_names.get(1)])
     out_image = next_year.rename([image.get('OriginalBand')])
     out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
-    
-    #out_image = next_year.select(next_year.bandNames(),[band_names.get(0)])
-    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 
