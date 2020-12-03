@@ -60,33 +60,60 @@ def getYearStackIC(image, band_names, band_indices=[-1,0,1]):
 #Functions for binary land cover change properties
 def LC_OneChange(image):
     '''
-    Determines if there was one change occurance from year i to year i+1. Returns an image with values:
+    Function to determine if there was one change occurance from year i to year i+1. Returns an image with values:
     1 if state(i) != state(i+1)
     0 if state(i) == state(i+1)
+    
+    Compatible with outputs from getYearStackIC, the image must have a property "OriginalBand" determining the central year
+    
+    Args:
+        image (ee.Image): and image with 2 bands, state(i) and state(i+1)
+    Returns:
+        And ee.Image defined above
     '''
     band_names = image.bandNames()
     out_image = image.select([band_names.get(0)]).neq(image.select([band_names.get(1)]))
-    out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
+    out_image = out_image.rename([image.get('OriginalBand')])
+    out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
+    
+    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
+    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_NoChange(image):
     '''
-    Determines if there was no change occurance from year i to year i+1. Returns an image with values:
+    Function to determine if there was no change occurance from year i to year i+1. Returns an image with values:
     1 if state(i) != state(i+1)
     0 if state(i) == state(i+1)
+    
+    Compatible with outputs from getYearStackIC, the image must have a property "OriginalBand" determining the central year
+    
+    Args:
+        image (ee.Image): and image with 2 bands, state(i) and state(i+1)
+    Returns:
+        And ee.Image defined above
     '''
     band_names = image.bandNames()
     out_image = image.select([band_names.get(0)]).eq(image.select([band_names.get(1)]))
-    out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
+    out_image = out_image.rename([image.get('OriginalBand')])
+    out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
+    
+    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
+    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_Reverse(image):
     '''
-    Determines if change that occured from i to i+1 reversed back to state i in i+2
+    Function to determine if change that occured from i to i+1 reversed back to state i in i+2
     1 if state(i) != state(i+1) and state(i) == state(i+2)
     0 otherwise
+    
+    Compatible with outputs from getYearStackIC, the image must have a property "OriginalBand" determining the central year
+    
+    Args:
+        image (ee.Image): and image with 3 bands, state(i), state(i+1), and state(i+2)
+    Returns:
+        And ee.Image defined above
     '''
     band_names = image.bandNames()
     current_year = image.select([band_names.get(0)])
@@ -96,15 +123,25 @@ def LC_Reverse(image):
     returnback = current_year.eq(next_next_year)
     changed = current_year.neq(next_year)
     out_image = returnback.bitwise_and(changed)
-    out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
+    out_image = out_image.rename([image.get('OriginalBand')])
+    out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
+    
+    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
+    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_ChangeToAnother(image):
     '''
-    Determines if change occured from i to i+1 and change occured in i+1 to i+2 where state(i)!=state(i+2)
+    Function to determine if change occured from i to i+1 and change occured in i+1 to i+2 where state(i)!=state(i+2)
     1 if state(i) != state(i+1) and state(i) != state(i+2) and state(i+1) != state(i+2)
     0 otherwise
+    
+    Compatible with outputs from getYearStackIC, the image must have a property "OriginalBand" determining the central year
+    
+    Args:
+        image (ee.Image): and image with 3 bands, state(i), state(i+1), and state(i+2)
+    Returns:
+        And ee.Image defined above
     '''
     band_names = image.bandNames()
     current_year = image.select([band_names.get(0)])
@@ -116,15 +153,25 @@ def LC_ChangeToAnother(image):
     not_reversed = current_year.neq(next_next_year)
     
     out_image = changed.bitwise_and(changed_again.bitwise_and(not_reversed))
-    out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
+    out_image = out_image.rename([image.get('OriginalBand')])
+    out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
+    
+    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
+    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_ConsistentChangeOneYear(image):
     '''
-    Determines if change that occured from i to i+1 stayed in i+2
+    Function to determine if change that occured from i to i+1 stayed in i+2
     1 if state(i) != state(i+1) and state(i+1) == state(i+2)
     0 otherwise
+    
+    Compatible with outputs from getYearStackIC, the image must have a property "OriginalBand" determining the central year
+    
+    Args:
+        image (ee.Image): and image with 3 bands, state(i), state(i+1), and state(i+2)
+    Returns:
+        And ee.Image defined above
     '''
     band_names = image.bandNames()
     current_year = image.select([band_names.get(0)])
@@ -135,15 +182,24 @@ def LC_ConsistentChangeOneYear(image):
     stayed = next_year.eq(next_next_year)
     
     out_image = changed.bitwise_and(stayed)
-    out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
+    out_image = out_image.rename([image.get('OriginalBand')])
+    out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
+    
+    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
     return out_image
 
 def LC_ConsistentChangeTwoYears(image):
     '''
-    Determines if change that occured from i to i+1 stayed in i+2 and i+3
+    Function to determine if change that occured from i to i+1 stayed in i+2 and i+3
     1 if state(i) != state(i+1) and state(i+1) == state(i+2) and state(i+1) == state(i+3)
     0 otherwise
+    
+    Compatible with outputs from getYearStackIC, the image must have a property "OriginalBand" determining the central year
+    
+    Args:
+        image (ee.Image): and image with 4 bands, state(i), state(i+1), state(i+2), and state(i+3)
+    Returns:
+        And ee.Image defined above
     '''
     band_names = image.bandNames()
     current_year = image.select([band_names.get(0)])
@@ -156,19 +212,31 @@ def LC_ConsistentChangeTwoYears(image):
     stayed_again = next_year.eq(next_next_next_year)
     
     out_image = changed.bitwise_and(stayed.bitwise_and(stayed_again))
-    out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
-    out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
+    out_image = out_image.rename([image.get('OriginalBand')])
+    out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
+    
+    #out_image = out_image.select(out_image.bandNames(),[band_names.get(0)])
+    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 def LC_YearAfter(image):
     '''
-    Returns land cover class for following year
+    Function to returns land cover class for following year
+    Compatible with outputs from getYearStackIC, the image must have a property "OriginalBand" determining the central year
+    
+    Args:
+        image (ee.Image): and image with 2 bands, state(i) and state(i+1)
+    Returns:
+        And ee.Image defined above
     '''
     band_names = image.bandNames()
     current_year = image.select([band_names.get(0)])
     next_year = image.select([band_names.get(1)])
-    out_image = next_year.select(next_year.bandNames(),[band_names.get(0)])
-    out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
+    out_image = next_year.rename([image.get('OriginalBand')])
+    out_image = out_image.set('OriginalBand',image.get('OriginalBand'))
+    
+    #out_image = next_year.select(next_year.bandNames(),[band_names.get(0)])
+    #out_image = out_image.set(ee.Dictionary({'OriginalBand':band_names.get(0)}))
     return out_image
 
 
@@ -431,9 +499,8 @@ def getSampleBandPoints(image, region, **kwargs):
     dargs.update(kwargs)
     sample = image.sample(**dargs)
     return sample
-    
-    
-def squashScenesToAnnual(probability_collection, years, start_date='{}-01-01', end_date='{}-12-31', method='median',image_prefix=''):
+
+def squashScenesToAnnualProbability(probability_collection, years, start_date='{}-01-01', end_date='{}-12-31', method='median',image_prefix=''):
     """
     Function to convert from daily, monthly, or scene by scene land cover classification probabilities images to annual probabilities.
 
@@ -457,7 +524,47 @@ def squashScenesToAnnual(probability_collection, years, start_date='{}-01-01', e
         image_prefix (String): prefix for outputted image names, images will be named '{image_prefix}_{year}' 
 
     Returns:
-        An ee.ImageCollection with images for each year in 'years' representing the most probable class
+        An ee.ImageCollection where each image is the annual class probabilities for each year
+    """
+    predicted_collection = []
+    for year in years:
+        year = int(year)
+        year_probs = probability_collection.filterDate(start_date.format(year),end_date.format(year))
+        band_names = year_probs.first().bandNames()
+        if method=='mean':
+            year_probs = year_probs.reduce(ee.Reducer.mean()).rename(band_names)
+        else:
+            year_probs = year_probs.reduce(ee.Reducer.median()).rename(band_names)
+        year_probs = year_probs.set('system:index',image_prefix+str(year))
+        predicted_collection.append(year_probs)
+    return ee.ImageCollection(predicted_collection)    
+    
+    
+def squashScenesToAnnualClassification(probability_collection, years, start_date='{}-01-01', end_date='{}-12-31', method='median',image_prefix=''):
+    """
+    Function to convert from daily, monthly, or scene by scene land cover classification probabilities images to annual classifications.
+
+    Args:
+        probability_collection (ee.ImageCollection): an Image Collection of classified images where each band represents 
+                            the predicted probability of the pixel being in class x. Each image must have the
+                            'start_date' and 'end_date' properties set in order to filter by date.
+        years (List or numpy.Array): a list or numpy array of years to reduce
+        start_date (String): the first day of the year to reduce over, in the format '{}-month-day where {} will be 
+                            replaced by the year, defaults to January 1st
+        end_date (String): the last day of the year to reduce over, in the format '{}-month-day where {} will be replaced 
+                            by the year, defaults to December 31st
+        method (String): the method to reduce the Image Collection, with the following options:
+                            - 'mean': takes the mean of the probability ee.Images from start_date to end_date, then takes the ArgMax 
+                                    to find the most probable class
+                            - 'median': takes the median of the probability ee.Images from start_date to end_date, then takes the ArgMax 
+                                    to find the most probable class
+                            - 'mode': takes ArgMax of every probability ee.Image from start_date to end_date to find the most probable 
+                                    class for each ee.Image, then takes the mode. 
+                            Defaults to 'median'
+        image_prefix (String): prefix for outputted image names, images will be named '{image_prefix}_{year}' 
+
+    Returns:
+        An ee.ImageCollection where each image has a single band "class" with the most likely class for that year
     """
     predicted_collection = []
     for year in years:
