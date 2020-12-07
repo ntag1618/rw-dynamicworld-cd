@@ -241,19 +241,19 @@ def getTemporalProbabilityDifference(probability_collection, date_1_start, date_
     Returns:
         An ee.Image of probability differences with second_image - first_image
     """
-    if aggregation == 'mean':
+    if reduce_method == 'mean':
         reducer = ee.Reducer.mean()
     else:
         reducer = ee.Reducer.median()
         
-    bandNames = image_collection.first().bandNames()
+    bandNames = probability_collection.first().bandNames()
     
     first_image = probability_collection.filterDate(date_1_start,date_1_end).reduce(reducer).rename(bandNames)
     second_image = probability_collection.filterDate(date_2_start,date_2_end).reduce(reducer).rename(bandNames)
     return second_image.subtract(first_image)
     
     
-def getSeasonalDifference(probability_collection, year, band_names, reduce_method='median', season_list = [['winter',-1,12,1,0,2,'end'],['spring',0,3,1,0,5,'end'],['summer',0,6,1,0,8,'end'],['fall',0,9,1,0,11,'end']], include_difference=True):
+def getSeasonalDifference(probability_collection, year, band_names, reduce_method='median', season_list = [['winter',-1,12,1,0,2,'end'],['spring',0,3,1,0,5,'end'],['summer',0,6,1,0,8,'end'],['fall',0,9,1,0,11,'end']], include_difference=True, year_difference=1, image_name='season_probs_{}'):
     """
     Function to convert from daily, monthly, or scene by scene land cover probabilities to seasonal probabilities for year and find the 
         difference in year+1 and year's seasonal probabilities.
@@ -292,9 +292,13 @@ def getSeasonalDifference(probability_collection, year, band_names, reduce_metho
                                     Fall ranging from September to the end of November
     include_difference (Boolean): whether to include the difference from year's seasons to the following year's seasons, defaults to True.
                                     Set to False if you want to only include the current year's season probabilities
+    year_difference (Int): if include_difference is True, which year after inputted year to calculate the difference.
+                            For example if year_difference=1, then the difference will be calculated as probabilities[year(i+1)]-probabilities[year(i)]
+                                        if year_difference=2, then the difference will be calculated as probabilities[year(i+2)]-probabilities[year(i)]
+    image_name (String): a name convention for the outputted image, will be formatted with year, defaults to 'season_probs_{year}'
     
     Returns:
-        An image collection of seasonal probabilities and, if include_difference is True, seasonal differences 
+        An ee.Image of seasonal probabilities and, if include_difference is True, seasonal differences, with system:index set using the image_name and year
     """
     season_changes = []
     year = int(year)
@@ -313,8 +317,8 @@ def getSeasonalDifference(probability_collection, year, band_names, reduce_metho
         season_end_year_firstYear = year+season_end_year_position
         
         if include_difference:
-            season_start_year_secondYear = year+season_start_year_position+1
-            season_end_year_secondYear = year+season_end_year_position+1
+            season_start_year_secondYear = year+season_start_year_position+year_difference
+            season_end_year_secondYear = year+season_end_year_position+year_difference
         
         if season_start_day == 'end':
             season_firstYear_start_day = calendar.monthrange(season_start_year_firstYear, int(season_start_month))[1]
@@ -347,12 +351,12 @@ def getSeasonalDifference(probability_collection, year, band_names, reduce_metho
             season_image = probability_collection.filterDate(season_firstYear_start,season_firstYear_end).reduce(ee.Reducer.mean()).rename(band_names)
             if include_difference:
                 diff_image = getTemporalProbabilityDifference(probability_collection, season_firstYear_start, 
-                                                            season_firstYear_end, season_secondYear_start, season_secondYear_end, aggregation='mean').rename(band_names)
+                                                            season_firstYear_end, season_secondYear_start, season_secondYear_end, reduce_method='mean').rename(band_names)
         else:
             season_image = probability_collection.filterDate(season_firstYear_start,season_firstYear_end).reduce(ee.Reducer.median()).rename(band_names)
             if include_difference:
                 diff_image = getTemporalProbabilityDifference(probability_collection, season_firstYear_start, 
-                                                            season_firstYear_end, season_secondYear_start, season_secondYear_end, aggregation='median').rename(band_names)
+                                                            season_firstYear_end, season_secondYear_start, season_secondYear_end, reduce_method='median').rename(band_names)
     
         season_image = season_image.set('system:index','{}_start'.format(season_name))
         season_changes.append(season_image)
@@ -363,6 +367,7 @@ def getSeasonalDifference(probability_collection, year, band_names, reduce_metho
         
     season_changes = ee.ImageCollection(season_changes) 
     season_changes = season_changes.toBands()
+    season_changes = season_changes.set('system:index',image_name.format(year))
     return season_changes
 
 
