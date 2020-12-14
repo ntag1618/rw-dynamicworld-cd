@@ -239,7 +239,7 @@ def getTemporalProbabilityDifference(probability_collection, date_1_start, date_
                             - 'median': takes the median of the probability ee.Images from start_date to end_date
                             Defaults to 'median'
     Returns:
-        An ee.Image of probability differences with second_image - first_image
+        An ee.Image of probability differences with second_image - first_image, the outputted image has dates set with the second date's range
     """
     if reduce_method == 'mean':
         reducer = ee.Reducer.mean()
@@ -250,6 +250,9 @@ def getTemporalProbabilityDifference(probability_collection, date_1_start, date_
     
     first_image = probability_collection.filterDate(date_1_start,date_1_end).reduce(reducer).rename(bandNames)
     second_image = probability_collection.filterDate(date_2_start,date_2_end).reduce(reducer).rename(bandNames)
+    output_image = second_image.subtract(first_image)
+    output_image = output_image.set('system:time_start',ee.Date(date_2_start))
+    output_image = output_image.set('system:time_end',ee.Date(date_2_end))
     return second_image.subtract(first_image)
     
     
@@ -359,6 +362,7 @@ def getSeasonalDifference(probability_collection, year, band_names, reduce_metho
                                                             season_firstYear_end, season_secondYear_start, season_secondYear_end, reduce_method='median').rename(band_names)
     
         season_image = season_image.set('system:index','{}_start'.format(season_name))
+        
         season_changes.append(season_image)
         
         if include_difference:
@@ -368,6 +372,8 @@ def getSeasonalDifference(probability_collection, year, band_names, reduce_metho
     season_changes = ee.ImageCollection(season_changes) 
     season_changes = season_changes.toBands()
     season_changes = season_changes.set('system:index',image_name.format(year))
+    season_changes = season_changes.set('system:time_start',ee.Date(season_firstYear_start))
+    season_changes = season_changes.set('system:time_end',ee.Date(season_firstYear_end))
     return season_changes
 
 
@@ -485,7 +491,7 @@ def getSampleBandPoints(image, region, **kwargs):
     sample = image.sample(**dargs)
     return sample
 
-def squashScenesToAnnualProbability(probability_collection, years, start_date='{}-01-01', end_date='{}-12-31', method='median',image_prefix=''):
+def squashScenesToAnnualProbability(probability_collection, years, start_date='{}-01-01', end_date='{}-12-31', method='median',image_name='{}'):
     """
     Function to convert from daily, monthly, or scene by scene land cover classification probabilities images to annual probabilities.
 
@@ -506,7 +512,7 @@ def squashScenesToAnnualProbability(probability_collection, years, start_date='{
                             - 'mode': takes ArgMax of every probability ee.Image from start_date to end_date to find the most probable 
                                     class for each ee.Image, then takes the mode. 
                             Defaults to 'median'
-        image_prefix (String): prefix for outputted image names, images will be named '{image_prefix}_{year}' 
+        image_name (String): name for outputted image names, images will be named image_name.format(year), defaults to '{}'.format(year)
 
     Returns:
         An ee.ImageCollection where each image is the annual class probabilities for each year
@@ -520,12 +526,14 @@ def squashScenesToAnnualProbability(probability_collection, years, start_date='{
             year_probs = year_probs.reduce(ee.Reducer.mean()).rename(band_names)
         else:
             year_probs = year_probs.reduce(ee.Reducer.median()).rename(band_names)
-        year_probs = year_probs.set('system:index',image_prefix+str(year))
+        year_probs = year_probs.set('system:index',image_name.format(year))        
+        year_probs = year_probs.set('system:time_start',ee.Date(start_date.format(year)))
+        year_probs = year_probs.set('system:time_end',ee.Date(end_date.format(year)))
         predicted_collection.append(year_probs)
     return ee.ImageCollection(predicted_collection)    
     
     
-def squashScenesToAnnualClassification(probability_collection, years, start_date='{}-01-01', end_date='{}-12-31', method='median',image_prefix=''):
+def squashScenesToAnnualClassification(probability_collection, years, start_date='{}-01-01', end_date='{}-12-31', method='median',image_name='{}'):
     """
     Function to convert from daily, monthly, or scene by scene land cover classification probabilities images to annual classifications.
 
@@ -546,7 +554,7 @@ def squashScenesToAnnualClassification(probability_collection, years, start_date
                             - 'mode': takes ArgMax of every probability ee.Image from start_date to end_date to find the most probable 
                                     class for each ee.Image, then takes the mode. 
                             Defaults to 'median'
-        image_prefix (String): prefix for outputted image names, images will be named '{image_prefix}_{year}' 
+        image_name (String): name for outputted image names, images will be named image_name.format(year), defaults to '{}'.format(year)
 
     Returns:
         An ee.ImageCollection where each image has a single band "class" with the most likely class for that year
@@ -567,7 +575,10 @@ def squashScenesToAnnualClassification(probability_collection, years, start_date
             probs_array = year_probs.toArray().toFloat()
             probs_max = probs_array.arrayArgmax().arrayGet(0).add(1)
         probs_max = probs_max.rename('class')
-        probs_max = probs_max.set('system:index',image_prefix+str(year))
+        probs_max = probs_max.set('system:index',image_name.format(year))
+        probs_max = probs_max.set('system:time_start',ee.Date(start_date.format(year)))
+        probs_max = probs_max.set('system:time_end',ee.Date(end_date.format(year)))
+        
         predicted_collection.append(probs_max)
     return ee.ImageCollection(predicted_collection)
         
@@ -637,6 +648,8 @@ def convertClassificationsToBinaryImages(image, classes_dict):
         band_collection = ee.ImageCollection(classes_dict.keys().map(lcYearToBinaryNested))
         band_collection = band_collection.toBands().rename(classes_dict.keys())
         band_collection = band_collection.set('system:index',band)
+        band_collection = band_collection.set('system:time_start',image.get('system:time_start'))
+        band_collection = band_collection.set('system:time_end',image.get('system:time_end'))
         return band_collection
 
     imageCollection = ee.ImageCollection(image.bandNames().map(lcYearToBinary))

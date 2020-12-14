@@ -90,6 +90,11 @@ def kFoldCrossValidation(inputtedFeatureCollection, propertyToPredictAsString, p
 
     Returns:
         An ee.Feature Collection of cross validation results, with training and validaiton score, parameters, and classifier name
+    
+    Much of this code was taken from Devin Routh's [https://devinrouth.com/] work at the Crowther Lab at ETH Zurich [https://www.crowtherlab.com/]
+    The code is released under Apache License Version 2.0 [http://www.apache.org/licenses/], and you can learn more about the license here [https://gitlab.ethz.ch/devinrouth/crowther_lab_nematodes/-/blob/master/LICENSE]
+    The code was originally written in JavaScript and was converted to Python and adapted for our purposes by Kristine Lister.
+    You can find the original code written by Devin in this Earth Engine toolbox: users/devinrouth/toolbox:KFoldCrossValConvolveGapFillEnsemble.js
     """
     np.random.seed(seed)
     #The sections below are the function's code, beginning with
@@ -100,7 +105,7 @@ def kFoldCrossValidation(inputtedFeatureCollection, propertyToPredictAsString, p
 
     sampleSeq = ee.List.sequence(1, collLength)
 
-    inputtedFCWithRand = inputtedFeatureCollection.randomColumn('Rand_Num', 42).sort('Rand_Num').toList(collLength)
+    inputtedFCWithRand = inputtedFeatureCollection.randomColumn('Rand_Num', seed).sort('Rand_Num').toList(collLength)
 
     # Prep the feature collection with random fold assignment numbers
     preppedListOfFeats = sampleSeq.map(lambda numberToSet: ee.Feature(inputtedFCWithRand.get(ee.Number(numberToSet).subtract(1))).set('Fold_ID', ee.Number(numberToSet)))
