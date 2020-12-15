@@ -2,13 +2,8 @@
 import os
 import ee
 import numpy as np
-import sklearn
-import statsmodels.api as sm
 import pandas as pd
 import random
-import json
-import calendar
-import time
 from . import preprocessing as npv
 
 """

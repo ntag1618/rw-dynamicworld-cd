@@ -2,8 +2,6 @@
 import os
 import ee
 import numpy as np
-import sklearn
-import statsmodels.api as sm
 import pandas as pd
 import random
 import json
@@ -256,7 +254,7 @@ def getTemporalProbabilityDifference(probability_collection, date_1_start, date_
     return second_image.subtract(first_image)
     
     
-def getSeasonalDifference(probability_collection, year, band_names, reduce_method='median', season_list = [['winter',-1,12,1,0,2,'end'],['spring',0,3,1,0,5,'end'],['summer',0,6,1,0,8,'end'],['fall',0,9,1,0,11,'end']], include_difference=True, year_difference=1, image_name='season_probs_{}'):
+def getSeasonalProbabilities(probability_collection, year, band_names, reduce_method='median', season_list = [['winter',-1,12,1,0,2,'end'],['spring',0,3,1,0,5,'end'],['summer',0,6,1,0,8,'end'],['fall',0,9,1,0,11,'end']], include_difference=True, year_difference=1, image_name='season_probs_{}'):
     """
     Function to convert from daily, monthly, or scene by scene land cover probabilities to seasonal probabilities for year and find the 
         difference in year+1 and year's seasonal probabilities.
