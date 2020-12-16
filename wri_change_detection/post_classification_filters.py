@@ -462,7 +462,7 @@ def applyGapFilter(image, bandNames):
             and the bands returned in chronological order.
     """
     filtered = applyForwardNoDataFilter(image, bandNames)
-    filtered = applyBackwardNoDataFilter(image, bandNames)
+    filtered = applyBackwardNoDataFilter(filtered, bandNames)
     return filtered
 
     
