@@ -612,3 +612,111 @@ def applyFrequencyFilter(image, yearBandNames, classDictionary, filterParams):
     
     return out_img
     
+    
+def applyProbabilityCutoffs(imageCollection, params):
+    """
+    Function to apply a probability filter to land cover probabilities in each image of imageCollection. 
+    The user defines which classes will be filtered and how to filter them in the params list.
+    The params list is a list of dictionaries, one for each class the user wants to filter.
+    The dictionaries in the params list is of the form {'class_name': String, 'class_value': Int, 'filter': String, 'threshold', Float}
+    
+    If the filter is 'gt' or 'gte' (representing 'greater than' or 'greater than or equal to'), and if the pixel class probability greater than or greater 
+        than or equal to the threshold, then final classification is replaced by the value of that class.
+    If the filter is 'lt' or 'lte' (representing 'less than' or 'less than or equal to'), and if the pixel class probability less than or less than or
+        equal to the threshold, and the pixel is in that class then final classification, then the final classification is replaced by
+        the majority class of the neighborhood, where the neighborhood is a square kernel of size 1.
+    
+    Args:
+        imageCollection (ee.ImageCollection): an ee.imageCollection where each image is the land cover classification probabilities (one band for each class)
+        params (List of Dictionaries): a List of Dictionaries of the form 
+                                        [{'class_name': String, 'class_value': Int, 'filter': String, 'threshold', Float},
+                                          {'class_name': String, 'class_value': Int, 'filter': String, 'threshold', Float}]
+                                        where:
+                                            'class_name' is the name of the land cover class, 
+                                            'class_value' is the value of the land cover class
+                                            'filter' is "gt", "gte", "lte", or "lt", representing greater than, greater than or equal to, less than or equal to,
+                                                        or less than.
+                                                        If filter is not in ['gt','gte','lte','lt'] then 'lt' is applied by default.
+                                            'threshold' is the threshold to determine whether to filter the pixel
+    Say for pixel[i,j] of image k, the bands have the following values:
+            Agriculture: 0.1
+            Forest: 0.6
+            Grassland: 0.2
+            Water: 0.5
+            Urban: 0.5
+    
+    Returns:
+        An ee.ImageCollection, with each image having one band representing the land cover classification after the filters have been applied.
+    """      
+        
+    #Define function to map across imageCollection
+    def probabilityFilter(image):
+        
+        #Get the classifications from the class with the highest probability
+        classifications = npv.probabilityToClassification(image)
+        
+        #Loop through parameters
+        for param in params:
+            #Load parameter values
+            class_name = param.get('class_name')
+            class_value = param.get('class_value')
+            filter_name = param.get('filter')
+            threshold = param.get('threshold')
+            
+            if filter_name=='gt':
+                #Find where the class_name is greater than threshold
+                prob_mask = image.select(class_name).gt(ee.Image.constant(threshold))
+                #Replace those pixels with the class value
+                classifications = classifications.where(prob_mask,class_value)
+            
+            elif filter_name=='gte':
+                #Find where the class_name is greater than or equal to threshold
+                prob_mask = image.select(class_name).gte(ee.Image.constant(threshold))
+                #Replace those pixels with the class value
+                classifications = classifications.where(prob_mask,class_value)
+                
+            elif filter_name == 'lte':
+                #Find where the class_name is less than or equal to threshold
+                prob_mask = image.select(class_name).lte(ee.Image.constant(threshold))
+                #Find where classifications are equal to class value
+                class_mask = classifications.eq(class_value)
+                #We only want to replace pixels where the class probability<=threshold AND classification==class_value
+                reclass_mask = prob_mask.bitwiseAnd(class_mask)
+        
+                #Define square kernel of surrounding pixels
+                kernel = ee.Kernel.square(1)
+                #Convert to a multiband image, one band for each neighbor
+                neighs = classifications.neighborhoodToBands(kernel)
+                #Reduce to find the majority class in neighborhood
+                majority = neighs.reduce(ee.Reducer.mode())
+        
+                #Replace pixels where the class probability<=threshold AND classification==class_value with the neighborhood majority class
+                classifications = classifications.where(reclass_mask,majority)
+        
+            else:
+                #Find where the class_name is less than or equal to threshold
+                prob_mask = image.select(class_name).lt(ee.Image.constant(threshold))
+                #Find where classifications are equal to class value
+                class_mask = classifications.eq(class_value)
+                #We only want to replace pixels where the class probability<=threshold AND classification==class_value
+                reclass_mask = prob_mask.bitwiseAnd(class_mask)
+        
+                #Define square kernel of surrounding pixels
+                kernel = ee.Kernel.square(1)
+                #Convert to a multiband image, one band for each neighbor
+                neighs = classifications.neighborhoodToBands(kernel)
+                #Reduce to find the majority class in neighborhood
+                majority = neighs.reduce(ee.Reducer.mode())
+        
+                #Replace pixels where the class probability<=threshold AND classification==class_value with the neighborhood majority class
+                classifications = classifications.where(reclass_mask,majority)
+        
+        return ee.Image(classifications)
+    return ee.ImageCollection(imageCollection.map(probabilityFilter))
+        
+    
+    
+    
+    
+    
+    

@@ -433,19 +433,6 @@ def convertSeriesToFeature(series,projection='EPSG:4326',lat_name='latitude',lon
     row_dict = series.to_dict()
     row_feature = ee.Feature(geometry,row_dict)
     return row_feature
-
-
-# #Function to sample image data at point locations (sampleBandPoints) and rename new property to image_name
-# def getSampleImageData(image, sampleBandPoints, image_name):
-#     sampleImageData = image.reduceRegions(
-#         collection=sampleBandPoints,
-#         reducer=ee.Reducer.first(),
-#         crs=crs,
-#         crsTransform=crsTransform
-#         )
-#     #Rename sampled values from "first" to image_name
-#     sampleImageData = sampleImageData.map(lambda x: x.set({image_name:x.get('first')}))
-#     return sampleImageData
     
 
 def getStratifiedSampleBandPoints(image, region, bandName, **kwargs):
@@ -610,6 +597,9 @@ def probabilityToClassification(image):
     probs_array = image.toArray().toFloat()
     #Get the argMax to find the band that has the highest probability, add 1 because indices start at 0
     probs_max = probs_array.arrayArgmax().arrayGet(0).add(1)
+    probs_max = probs_max.set('system:index',image.get('system:index'))
+    probs_max = probs_max.set('system:time_start',image.get('system:time_start'))
+    probs_max = probs_max.set('system:time_end',image.get('system:time_end'))
     return probs_max
     
     
