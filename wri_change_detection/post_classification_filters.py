@@ -638,12 +638,6 @@ def applyProbabilityCutoffs(imageCollection, params):
                                                         or less than.
                                                         If filter is not in ['gt','gte','lte','lt'] then 'lt' is applied by default.
                                             'threshold' is the threshold to determine whether to filter the pixel
-    Say for pixel[i,j] of image k, the bands have the following values:
-            Agriculture: 0.1
-            Forest: 0.6
-            Grassland: 0.2
-            Water: 0.5
-            Urban: 0.5
     
     Returns:
         An ee.ImageCollection, with each image having one band representing the land cover classification after the filters have been applied.
