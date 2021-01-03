@@ -6,7 +6,7 @@ import pandas as pd
 import random
 import itertools
 
-def pretty_print_confusion_matrix(confusion_list):
+def pretty_print_confusion_matrix_binary(confusion_list):
     """
     Function to print a confusion matrix list
 
@@ -22,7 +22,29 @@ def pretty_print_confusion_matrix(confusion_list):
 
     out_confusion_matrix = out_confusion_matrix.set_index('_')
     return out_confusion_matrix
+    
+def pretty_print_confusion_matrix_multiclass(gee_error_matrix, class_names):
+    """
+    Function to print a confusion matrix list
 
+    Args:
+        confusion_list (ee.ConfusionMatrix): ee.ConfusionMatrix
+        class_names (List of Strings): list of class names
+
+    Returns:
+        An pandas.DataFrame of confusion matrix with column names and row names matching classes and totals for observed and predicted values
+    """
+    #Get the confusion matrix as a list
+    gee_error_matrix = gee_error_matrix.getInfo()
+
+    #Print the confusion matrix with the class names as a dataframe
+    #Axis 1 (the rows) of the matrix correspond to the actual values, and Axis 0 (the columns) to the predicted values.
+    errorMatrixDf = pd.DataFrame(gee_error_matrix, index = class_names, 
+                                         columns = class_names)
+    errorMatrixDf['Sum Observed'] = errorMatrixDf.sum(axis=1)
+    errorMatrixDf.loc['Sum Predicted'] = errorMatrixDf.sum()
+    return errorMatrixDf
+    
 def buildGridSearchList(parameters,classifier_name):
     """
     Function to build a list of classifiers to use in kFoldCrossValidation to test mutliple parameters similar to scikit learn's gridSearchCV

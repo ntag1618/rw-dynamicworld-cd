@@ -266,10 +266,10 @@ def majorityFilter(image, params):
     
     Args:
         image (ee.Image): an Image where each band represents a land cover classification for a each year
-        params (Dictionary): a dictionary of the form {'classValue': [Int], 'maxSize': [Int]}, where classValue is the value of the land cover
-                                class to filter, and the maxSize is the minimum number of connected pixels of the same land cover class
+        params (Dictionary): a dictionary of the form {'classValue': [Int], 'minSize': [Int]}, where classValue is the value of the land cover
+                                class to filter, and the minSize is the minimum number of connected pixels of the same land cover class
                                 to not be removed.
-                                If the number of connectedPixels of that land cover class for the central pixels is less than maxSize,
+                                If the number of connectedPixels of that land cover class for the central pixels is less than minSize,
                                 the central pixel is replaced by the mode of the surrounding pixels, defined by a square kernel with size shift 1.
                                 # Squared kernel with size shift 1:
                                 # [[p(x-1,y+1), p(x,y+1), p(x+1,y+1)]
@@ -277,29 +277,29 @@ def majorityFilter(image, params):
                                 # [ p(x-1,y-1), p(x,y-1), p(x+1,y-1)]
     Returns:
         A multiband ee.Image with bands representing years of land cover classifications, filtered with the spatial filter to remove clusters less than
-            the inputted size in 'maxSize' of the params dictionary for the class 'classValue' defined in the params dictionary
+            the inputted size in 'minSize' of the params dictionary for the class 'classValue' defined in the params dictionary
     
     Example: 
         The inputted image has the following bands, classification_1985, classification_1986, classification_1987 representing the classifcations
                     for 1985, 1986, 1987.
-        The params dictionary is {'classValue': 1, 'maxSize': 5}
+        The params dictionary is {'classValue': 1, 'minSize': 5}
     
         Say for pixel[i,j] of image k, pixel[i,j] has the value 1, and connectedPixelCount finds that it only has 4 connected neighbors of the same class.
         Then the returned value of pixel[i,j] in image k would be the mode of the surrounding pixels, defined by a square kernel with size shift 1.
     
     """
     params = ee.Dictionary(params)
-    maxSize = ee.Number(params.get('maxSize'))
+    minSize = ee.Number(params.get('minSize'))
     classValue = ee.Number(params.get('classValue'))
     
     #Generate a mask from the class value
     classMask = image.eq(classValue)
     
     #Labeling the group of pixels until 100 pixels connected
-    labeled = classMask.mask(classMask).connectedPixelCount(maxSize, True)
+    labeled = classMask.mask(classMask).connectedPixelCount(minSize, True)
     
     #Select some groups of connected pixels
-    region = labeled.lt(maxSize)
+    region = labeled.lt(minSize)
     
     # Squared kernel with size shift 1
     # [[p(x-1,y+1), p(x,y+1), p(x+1,y+1)]
@@ -331,12 +331,12 @@ def applySpatialFilter(image,filterParams):
     Args:
         image (ee.Image): an Image where each band represents a land cover classification for a each year
         params (List of Dictionaries): a List of Dictionaries of the form 
-                                        [{'classValue': [Int], 'maxSize': [Int]},
-                                        {'classValue': [Int], 'maxSize': [Int]},
-                                        {'classValue': [Int], 'maxSize': [Int]}]
-                                        where classValue is the value of the land cover to filter and maxSize is the minimum number of connected pixels 
+                                        [{'classValue': [Int], 'minSize': [Int]},
+                                        {'classValue': [Int], 'minSize': [Int]},
+                                        {'classValue': [Int], 'minSize': [Int]}]
+                                        where classValue is the value of the land cover to filter and minSize is the minimum number of connected pixels 
                                         of the same land cover class to not be removed.
-                                If the number of connectedPixels of that land cover class for the central pixels is less than maxSize,
+                                If the number of connectedPixels of that land cover class for the central pixels is less than minSize,
                                 the central pixel is replaced by the mode of the surrounding pixels, defined by a square kernel with size shift 1.
                                 # Squared kernel with size shift 1:
                                 # [[p(x-1,y+1), p(x,y+1), p(x+1,y+1)]
@@ -344,7 +344,7 @@ def applySpatialFilter(image,filterParams):
                                 # [ p(x-1,y-1), p(x,y-1), p(x+1,y-1)]
     Returns:
         A multiband ee.Image with bands representing years of land cover classifications, filtered with the spatial filter to remove clusters less than
-            the inputted size in 'maxSize' of the params dictionary for the class 'classValue' defined in the params dictionary for each params dictionary
+            the inputted size in 'minSize' of the params dictionary for the class 'classValue' defined in the params dictionary for each params dictionary
             in the list of filterParams.
     
     Example: 
@@ -352,15 +352,15 @@ def applySpatialFilter(image,filterParams):
                     for 1985, 1986, 1987.
         The filterParams list of dictionaries is:
                 filterParams = [
-                    {'classValue': 1, 'maxSize': 3},
-                    {'classValue': 2, 'maxSize': 5},
-                    {'classValue': 3, 'maxSize': 5},
-                    {'classValue': 4, 'maxSize': 3},
-                    {'classValue': 5, 'maxSize': 3},
-                    {'classValue': 6, 'maxSize': 3},
-                    {'classValue': 7, 'maxSize': 3},
-                    {'classValue': 8, 'maxSize': 3},
-                    {'classValue': 9, 'maxSize': 3},
+                    {'classValue': 1, 'minSize': 3},
+                    {'classValue': 2, 'minSize': 5},
+                    {'classValue': 3, 'minSize': 5},
+                    {'classValue': 4, 'minSize': 3},
+                    {'classValue': 5, 'minSize': 3},
+                    {'classValue': 6, 'minSize': 3},
+                    {'classValue': 7, 'minSize': 3},
+                    {'classValue': 8, 'minSize': 3},
+                    {'classValue': 9, 'minSize': 3},
                 ]
     """
     #Loop through list of parameters and apply spatial filter using majorityFilter
